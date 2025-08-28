@@ -7,11 +7,13 @@ import News from './News'
 import Contact from './Contact'
 import About from './About'
 import Register from './components/Register/Register'
+import { ToastContainer } from 'react-toastify'
 
 function App() {
   return (
     <div>
       <Nav />
+      <ToastContainer />
       <Routes >
         <Route path="/" element={<Home />} />
         <Route path="/news" element={<News />} />

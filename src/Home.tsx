@@ -4,7 +4,7 @@ import axios from "axios";
 function Home() {
   useEffect(() => {
     axios
-      .get("http://localhost:8080/api/test-api", {
+      .get("http://localhost:8080/api/v1/test-api", {
         headers: {
             "Content-Type": "application/json"
         }
