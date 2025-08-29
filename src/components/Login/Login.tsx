@@ -1,8 +1,114 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Login.scss";
 import ScrollTop from "../UI/ScrollTop";
+import { useState, useRef } from "react";
+import { toast } from "react-toastify";
+import { loginUser } from "../../services/userService";
+import handleErrorFetchApi from "../UI/HandleErrorFetchApi";
+import { useDispatch, useSelector } from "react-redux";
 
 function Login() {
+  const dispatch = useDispatch();
+  useSelector((state: any) => state.user);
+
+  const [formData, setFormData] = useState({
+    emailOrPhone: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const navigate = useNavigate();
+
+  const emailOrPhoneRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  const validate = () => {
+    const newErrors: { [key: string]: string } = {};
+    if (!formData.emailOrPhone) {
+      newErrors.emailOrPhone = "Email or phone number is required";
+    }
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    }
+    return newErrors;
+  };
+
+  const checkEmailOrPhone = (inputValue: string) => {
+    if (/\S+@\S+\.\S+/.test(inputValue)) {
+      return {
+        email: inputValue,
+        password: formData.password,
+      };
+    } else if (/^\d+$/.test(inputValue)) {
+      return {
+        phone: inputValue,
+        password: formData.password,
+      };
+    }
+    return null;
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const validationErrors = validate();
+      setErrors(validationErrors);
+
+      // Focus vào input đầu tiên bị lỗi
+      if (Object.keys(validationErrors).length > 0) {
+        const firstError = Object.keys(validationErrors)[0];
+        switch (firstError) {
+          case "emailOrPhone":
+            emailOrPhoneRef.current?.focus();
+            break;
+          case "password":
+            passwordRef.current?.focus();
+            break;
+          default:
+            break;
+        }
+        Object.values(validationErrors).forEach((error: string) => {
+          toast.error(error, {
+            position: "top-right",
+            autoClose: 3000,
+          });
+        });
+        return;
+      }
+
+      // Perform login logic here
+      const userData = checkEmailOrPhone(formData.emailOrPhone);
+      if (!userData) {
+        toast.error("Invalid email or phone number", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        emailOrPhoneRef.current?.focus();
+        return;
+      }
+
+      const response = await loginUser(userData);
+      if (response.status === 200) {
+        toast.success("Login successful", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+
+        const data = {
+          isAuthenticated: true,
+          token: 'fake token'
+        }
+
+        sessionStorage.setItem("authData", JSON.stringify(data));
+        dispatch({ type: "user/setUser", payload: response.data.data.user });
+        navigate("/user-dashboard");
+      }
+    } catch (error: any) {
+      handleErrorFetchApi.handleLoginError(error);
+    }
+  };
+
   return (
     <div className="login-container">
       <ScrollTop />
@@ -24,22 +130,38 @@ function Login() {
           <div className="content-right col-12 col-sm-5">
             <div className="d-flex flex-column gap-3 py-3">
               <h2>Login</h2>
-              <form>
+              <form className="login-form" onSubmit={handleLogin}>
                 <div className="mb-3">
                   <input
+                    ref={emailOrPhoneRef}
                     type="text"
                     id="emailOrPhone"
+                    value={formData.emailOrPhone}
                     className="form-control"
                     placeholder="Email address or phone number"
+                    onChange={(e) =>
+                      setFormData({ ...formData, emailOrPhone: e.target.value })
+                    }
                   />
+                  {errors.emailOrPhone && (
+                    <div className="text-danger">{errors.emailOrPhone}</div>
+                  )}
                 </div>
                 <div className="mb-3">
                   <input
+                    ref={passwordRef}
                     type="password"
                     id="password"
+                    value={formData.password}
                     className="form-control"
                     placeholder="Password"
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
                   />
+                  {errors.password && (
+                    <div className="text-danger">{errors.password}</div>
+                  )}
                 </div>
 
                 <button type="submit" className="btn btn-primary w-100 mb-3">

@@ -1,9 +1,10 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Register.scss";
 import ScrollTop from "../UI/ScrollTop";
 import { useState, useRef } from "react";
 import { toast } from "react-toastify";
-import axios from "axios";
+import { registerNewUser } from "../../services/userService";
+import handleErrorFetchApi from "../UI/HandleErrorFetchApi";
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -17,6 +18,8 @@ function Register() {
 
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const navigate = useNavigate();
 
   // Tạo ref cho các input
   const usernameRef = useRef<HTMLInputElement>(null);
@@ -74,53 +77,28 @@ function Register() {
           default:
             break;
         }
-        toast.error(validationErrors[firstError], {
-          position: "top-right",
-          autoClose: 3000,
+         Object.values(validationErrors).forEach((error: string) => {
+          toast.error(error, {
+            position: "top-right",
+            autoClose: 3000,
+          });
         });
         return;
       }
       // Submit form
-      const response = await axios.post(
-        "http://localhost:8080/api/v1/register",
-        formData
-      );
+      const response = await registerNewUser(formData);
+
+      // Check response status
       if (response.status === 201) {
         toast.success("Registration successful!", {
           position: "top-right",
           autoClose: 3000,
         });
-        setFormData({
-          username: "",
-          email: "",
-          gender: "male",
-          phone: "",
-          address: "",
-          password: "",
-        });
-        setConfirmPassword("");
-        setErrors({});
+
+        navigate("/login");
       }
     } catch (error: any) {
-      if (
-        error.response &&
-        (error.response.status === 400 || error.response.status === 500)
-      ) {
-        const message =
-          error.response.data && typeof error.response.data === "string"
-            ? error.response.data
-            : "Registration failed";
-        toast.error(message, {
-          position: "top-right",
-          autoClose: 3000,
-        });
-      } else {
-        toast.error("Registration failed", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-      }
-      console.error("Error occurred during registration:", error);
+      handleErrorFetchApi.handleRegisterError(error);
     }
   };
 
