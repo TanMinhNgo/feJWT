@@ -1,61 +1,46 @@
 import "./App.scss";
-import Login from "./components/Login/Login";
 import Nav from "./components/Navigation/Nav";
-import { Route, Routes } from "react-router-dom";
-import Home from "./Home";
-import News from "./News";
-import Contact from "./Contact";
-import About from "./About";
-import Register from "./components/Register/Register";
 import { ToastContainer } from "react-toastify";
-import UserDashboard from "./components/UserDashboard/UserDashboard";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState } from "react";
-
-interface AuthData {
-  readonly isAuthenticated: boolean;
-  readonly token: string;
-}
+import { useEffect } from "react";
+import AppRoutes from "./routes/AppRoutes";
+import { clearUser, setUser } from "./stores/userSlice";
+import { useNavigate } from "react-router-dom";
 
 function App() {
   const user = useSelector((state: any) => state.user);
-
   const dispatch = useDispatch();
 
-  const [authData, setAuthData] = useState<AuthData | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedAuthData = sessionStorage.getItem("authData");
     if (storedAuthData) {
-      setAuthData(JSON.parse(storedAuthData));
+      try {
+        const parsedData = JSON.parse(storedAuthData);
+        if (parsedData.isAuthenticated && !user.isLoggedIn) {
+          dispatch(setUser(parsedData.user)); // Sử dụng setUser
+        }
+      } catch (err) {
+        console.error("Error parsing auth data:", err);
+        sessionStorage.removeItem("authData");
+        dispatch(clearUser()); // Sử dụng clearUser
+        navigate("/login");
+      }
     } else {
-      setAuthData(null);
-      dispatch({ type: "user/clearUser" });
+      navigate("/login");
     }
-  }, [authData]);
+  }, [dispatch, user.isLoggedIn]);
 
   return (
     <div>
-      <Nav isLoggedIn={user.isLoggedIn} />
-
+      <div className="app-header">
+        <Nav isLoggedIn={user.isLoggedIn} />
+      </div>
+      <div className="app-container">
+        <AppRoutes />
+      </div>
       <ToastContainer />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/news" element={<News />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/user-dashboard" element={<UserDashboard />} />
-        <Route
-          path="*"
-          element={
-            <h2 style={{ textAlign: "center", color: "red", fontSize: "50px" }}>
-              404 Not Found
-            </h2>
-          }
-        />
-      </Routes>
     </div>
   );
 }

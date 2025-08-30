@@ -43,7 +43,29 @@ const handleErrorFetchApi = {
           });
         }
         console.error("Registration failed:", error);
-    }
+    },
+
+    handleGetAllUsersError: (error: any) => {
+      if (
+        error.response &&
+        (error.response.status === 404 || error.response.status === 500)
+      ) {
+        const message =
+          error.response.data && typeof error.response.data === "string"
+            ? error.response.data
+            : "Failed to fetch user list";
+        toast.error(message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      } else {
+        toast.error("Failed to fetch user list", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+      console.error("Failed to fetch user list:", error);
+    },
 }
 
 export default handleErrorFetchApi;

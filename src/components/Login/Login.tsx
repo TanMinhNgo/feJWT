@@ -1,23 +1,38 @@
 import { Link, useNavigate } from "react-router-dom";
 import "./Login.scss";
 import ScrollTop from "../UI/ScrollTop";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
-import { loginUser } from "../../services/userService";
+import { loginUser } from "../../services/authService";
 import handleErrorFetchApi from "../UI/HandleErrorFetchApi";
 import { useDispatch, useSelector } from "react-redux";
+import { setUser } from "../../stores/userSlice";
 
 function Login() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   useSelector((state: any) => state.user);
+
+  useEffect(() => {
+    const authData = sessionStorage.getItem("authData");
+    if (authData) {
+      try {
+        const parsedData = JSON.parse(authData);
+        if (parsedData.isAuthenticated) {
+          navigate("/user-dashboard");
+        }
+      } catch (err) {
+        console.error("Error parsing auth data:", err);
+        sessionStorage.removeItem("authData");
+      }
+    }
+  }, [navigate]);
 
   const [formData, setFormData] = useState({
     emailOrPhone: "",
     password: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
-  const navigate = useNavigate();
 
   const emailOrPhoneRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -97,11 +112,12 @@ function Login() {
 
         const data = {
           isAuthenticated: true,
-          token: 'fake token'
-        }
+          token: "fake token",
+          user: response.data.data.user,
+        };
 
         sessionStorage.setItem("authData", JSON.stringify(data));
-        dispatch({ type: "user/setUser", payload: response.data.data.user });
+        dispatch(setUser(response.data.data.user));
         navigate("/user-dashboard");
       }
     } catch (error: any) {

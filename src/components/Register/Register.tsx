@@ -3,7 +3,7 @@ import "./Register.scss";
 import ScrollTop from "../UI/ScrollTop";
 import { useState, useRef } from "react";
 import { toast } from "react-toastify";
-import { registerNewUser } from "../../services/userService";
+import { registerNewUser } from "../../services/authService";
 import handleErrorFetchApi from "../UI/HandleErrorFetchApi";
 
 function Register() {

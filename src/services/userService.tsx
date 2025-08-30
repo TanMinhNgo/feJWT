@@ -1,21 +1,14 @@
 import axios from "axios";
 
-const registerNewUser = async (data: any) => {
-    const response = await axios.post(
-        "http://localhost:8080/api/v1/register",
-        data
-      );
+const getAllUsers = async (currentPage: number, currentLimit: number) => {
+  const response = await axios.get("http://localhost:8080/api/v1/user/read", {
+    params: {
+      page: currentPage,
+      limit: currentLimit
+    }
+  });
 
-    return response;
+  return response;
 };
 
-const loginUser = async (data: any) => {
-    const response = await axios.post(
-        "http://localhost:8080/api/v1/login",
-        data
-      );
-
-    return response;
-};
-
-export { registerNewUser, loginUser };
+export { getAllUsers };
