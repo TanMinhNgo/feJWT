@@ -1,8 +1,8 @@
-import axios from "axios";
+import axios from "../setup/axios";
 
 const registerNewUser = async (data: any) => {
     const response = await axios.post(
-        "http://localhost:8080/api/v1/register",
+        "/v1/register",
         data
       );
 
@@ -11,7 +11,7 @@ const registerNewUser = async (data: any) => {
 
 const loginUser = async (data: any) => {
     const response = await axios.post(
-        "http://localhost:8080/api/v1/login",
+        "/v1/login",
         data
       );
 
