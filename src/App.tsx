@@ -15,22 +15,35 @@ function App() {
 
   useEffect(() => {
     const storedAuthData = sessionStorage.getItem("authData");
+    
     if (storedAuthData) {
       try {
         const parsedData = JSON.parse(storedAuthData);
-        if (parsedData.isAuthenticated && !user.isLoggedIn) {
-          dispatch(setUser(parsedData.user)); // Sử dụng setUser
+        
+        if (parsedData.accessToken && parsedData.user) {
+          const userData = {
+            user: parsedData.user,
+            accessToken: parsedData.accessToken,
+            isLoggedIn: true
+          };
+          
+          dispatch(setUser(userData));
+        } else {
+          sessionStorage.removeItem("authData");
+          dispatch(clearUser());
+          navigate("/login");
         }
       } catch (err) {
-        console.error("Error parsing auth data:", err);
+        console.error("❌ Error parsing auth data:", err);
         sessionStorage.removeItem("authData");
-        dispatch(clearUser()); // Sử dụng clearUser
+        dispatch(clearUser());
         navigate("/login");
       }
     } else {
+      dispatch(clearUser());
       navigate("/login");
     }
-  }, [dispatch, user.isLoggedIn]);
+  }, [dispatch, navigate]);
 
   return (
     <div>

@@ -112,12 +112,19 @@ function Login() {
 
         const data = {
           isAuthenticated: true,
-          token: "fake token",
+          accessToken: response.data.data.accessToken,
           user: response.data.data.user,
+          roles: response.data.data.roles,
+        };
+
+        const userData = {
+          user: response.data.data.user,
+          accessToken: response.data.data.accessToken,
+          isLoggedIn: true,
         };
 
         sessionStorage.setItem("authData", JSON.stringify(data));
-        dispatch(setUser(response.data.data.user));
+        dispatch(setUser(userData));
         navigate("/user-dashboard");
       }
     } catch (error: any) {

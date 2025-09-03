@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getGroupList } from "../../services/userService";
 import handleErrorFetchApi from "../UI/HandleErrorFetchApi";
+import ClipLoader from "react-spinners/ClipLoader";
 
 type User = {
   id: number;
@@ -24,7 +25,7 @@ type Group = {
   description: string;
 };
 
-type UserModalProps = {
+interface UserModalProps {
   showModal: boolean;
   typeModal: "add" | "edit" | "delete";
   selectedUser: User | null;
@@ -44,7 +45,9 @@ type UserModalProps = {
   onSubmitEdit: (e: React.FormEvent) => void;
   onConfirmDelete: () => void;
   onFieldChange: (field: string, value: string | number) => void;
-};
+  isSubmitting?: boolean;
+  isDeleting?: boolean;
+}
 
 const UserModal: React.FC<UserModalProps> = ({
   showModal,
@@ -58,21 +61,30 @@ const UserModal: React.FC<UserModalProps> = ({
   onSubmitEdit,
   onConfirmDelete,
   onFieldChange,
+  isSubmitting,
+  isDeleting,
 }) => {
   const [groupList, setGroupList] = useState<Group[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false); // ✅ Add loading state
 
   useEffect(() => {
-    fetchGroupList();
-  }, []);
+    if (showModal) {
+      // Only fetch when modal is shown
+      fetchGroupList();
+    }
+  }, [showModal]);
 
   const fetchGroupList = async () => {
     try {
+      setIsLoadingGroups(true); // ✅ Start loading
       const response = await getGroupList();
       if (response.status === 200) {
         setGroupList(response.data.data);
       }
     } catch (error) {
       handleErrorFetchApi.handleGetGroupListError(error);
+    } finally {
+      setIsLoadingGroups(false); // ✅ Stop loading
     }
   };
 
@@ -141,14 +153,14 @@ const UserModal: React.FC<UserModalProps> = ({
             <input
               ref={refs.confirmPasswordRef}
               type="password"
-              className={`form-control ${errors.confirmPassword ? "is-invalid" : ""}`}
+              className={`form-control ${
+                errors.confirmPassword ? "is-invalid" : ""
+              }`}
               value={formData.confirmPassword}
               onChange={(e) => onFieldChange("confirmPassword", e.target.value)}
             />
             {errors.confirmPassword && (
-              <div className="invalid-feedback">
-                {errors.confirmPassword}
-              </div>
+              <div className="invalid-feedback">{errors.confirmPassword}</div>
             )}
           </div>
         </div>
@@ -206,19 +218,36 @@ const UserModal: React.FC<UserModalProps> = ({
           <span className="form-label">
             Group: <span className="text-danger">*</span>
           </span>
-          <select
-            ref={refs.groupRef}
-            className={`form-select ${errors.groupId ? "is-invalid" : ""}`}
-            value={formData.groupId}
-            onChange={(e) => onFieldChange("groupId", Number(e.target.value))}
-          >
-            <option value={0}>Select Group</option>
-            {groupList?.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name} - {group.description}
+          <div className="position-relative">
+            <select
+              ref={refs.groupRef}
+              className={`form-select ${errors.groupId ? "is-invalid" : ""}`}
+              value={formData.groupId}
+              onChange={(e) => onFieldChange("groupId", Number(e.target.value))}
+              disabled={isLoadingGroups}
+            >
+              <option value={0}>
+                {isLoadingGroups ? "Loading groups..." : "Select Group"}
               </option>
-            ))}
-          </select>
+              {!isLoadingGroups &&
+                groupList?.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name} - {group.description}
+                  </option>
+                ))}
+            </select>
+
+            {/* ✅ Loading spinner inside select */}
+            {isLoadingGroups && (
+              <div
+                className="position-absolute top-50 end-0 translate-middle-y me-3"
+                style={{ pointerEvents: "none" }}
+              >
+                <ClipLoader size={16} color="#6c757d" />
+              </div>
+            )}
+          </div>
+
           {errors.groupId && (
             <div className="invalid-feedback">{errors.groupId}</div>
           )}
@@ -231,16 +260,15 @@ const UserModal: React.FC<UserModalProps> = ({
   const renderModalHeader = (title: string) => (
     <div className="modal-header">
       <h5 className="modal-title">{title}</h5>
-      <button
-        type="button"
-        className="btn-close"
-        onClick={onClose}
-      ></button>
+      <button type="button" className="btn-close" onClick={onClose}></button>
     </div>
   );
 
   // Helper for rendering modal footer
-  const renderModalFooter = (submitLabel: string, submitClass: string, onSubmitType: "add" | "edit" | "delete") => (
+  const renderModalFooter = (
+    submitClass: string,
+    onSubmitType: "add" | "edit" | "delete"
+  ) => (
     <div className="modal-footer d-flex flex-column flex-sm-row gap-2">
       <button
         type="button"
@@ -254,16 +282,47 @@ const UserModal: React.FC<UserModalProps> = ({
           type="button"
           className={`btn ${submitClass} flex-fill flex-sm-grow-0 order-1 order-sm-2`}
           onClick={onConfirmDelete}
+          disabled={isDeleting}
         >
-          {submitLabel}
+          {isDeleting ? (
+            <>
+              <ClipLoader size={16} color="#fff" />
+              <span className="ms-2">Deleting...</span>
+            </>
+          ) : (
+            "Delete"
+          )}
         </button>
       ) : (
-        <button
-          type="submit"
-          className={`btn ${submitClass} flex-fill flex-sm-grow-0 order-1 order-sm-2`}
-        >
-          {submitLabel}
-        </button>
+        (() => {
+          let buttonText = "";
+          if (isSubmitting) {
+            buttonText = (
+              <>
+                <ClipLoader size={16} color="#fff" />
+                <span className="ms-2">Saving...</span>
+              </>
+            ) as unknown as string;
+          } else {
+            buttonText = typeModal === "add" ? "Add User" : "Update User";
+          }
+          return (
+            <button
+              type="submit"
+              className={`btn ${submitClass} flex-fill flex-sm-grow-0 order-1 order-sm-2`}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <ClipLoader size={16} color="#fff" />
+                  <span className="ms-2">Saving...</span>
+                </>
+              ) : (
+                buttonText
+              )}
+            </button>
+          );
+        })()
       )}
     </div>
   );
@@ -276,9 +335,7 @@ const UserModal: React.FC<UserModalProps> = ({
           style={{ fontSize: "3rem" }}
         ></i>
       </div>
-      <h6 className="mb-3">
-        Are you sure you want to delete this user?
-      </h6>
+      <h6 className="mb-3">Are you sure you want to delete this user?</h6>
       {selectedUser && (
         <div className="alert alert-danger">
           <div>
@@ -297,7 +354,9 @@ const UserModal: React.FC<UserModalProps> = ({
       return (
         <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
           <div className="modal-content">
-            {renderModalHeader(typeModal === "add" ? "Add New User" : "Edit User")}
+            {renderModalHeader(
+              typeModal === "add" ? "Add New User" : "Edit User"
+            )}
             <form onSubmit={typeModal === "add" ? onSubmitAdd : onSubmitEdit}>
               <div className="modal-body">
                 <div className="container-fluid px-0">
@@ -305,7 +364,6 @@ const UserModal: React.FC<UserModalProps> = ({
                 </div>
               </div>
               {renderModalFooter(
-                typeModal === "add" ? "Add User" : "Update User",
                 typeModal === "add" ? "btn-primary" : "btn-warning",
                 typeModal
               )}
@@ -320,7 +378,7 @@ const UserModal: React.FC<UserModalProps> = ({
           <div className="modal-content">
             {renderModalHeader("Delete User")}
             {renderDeleteBody()}
-            {renderModalFooter("Delete User", "btn-danger", "delete")}
+            {renderModalFooter("btn-danger", "delete")}
           </div>
         </div>
       );

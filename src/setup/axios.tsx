@@ -12,6 +12,8 @@ const instance = axios.create({
     }
 });
 
+instance.defaults.withCredentials = true;
+
 // Request interceptor
 instance.interceptors.request.use(
   (config) => {

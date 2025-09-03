@@ -56,7 +56,7 @@ const handleErrorFetchApi = {
     handleGetAllUsersError: (error: any) => {
       if (
         error.response &&
-        (error.response.status === 404 || error.response.status === 500)
+        (error.response.status === 401 || error.response.status === 403 || error.response.status === 404 || error.response.status === 500)
       ) {
         let message = "Failed to fetch user list";
         
@@ -82,7 +82,7 @@ const handleErrorFetchApi = {
     handleDeleteUserError: (error: any) => {
       if (
         error.response &&
-        (error.response.status === 400 || error.response.status === 500)
+        (error.response.status === 401 || error.response.status === 403 || error.response.status === 400 || error.response.status === 500)
       ) {
         let message = "Failed to delete user";
         
@@ -108,7 +108,7 @@ const handleErrorFetchApi = {
     handleAddUserError: (error: any) => {
       if (
         error.response &&
-        (error.response.status === 400 || error.response.status === 500)
+        (error.response.status === 401 || error.response.status === 403 || error.response.status === 400 || error.response.status === 500)
       ) {
         let message = "Failed to add user";
         
@@ -134,7 +134,7 @@ const handleErrorFetchApi = {
     handleEditUserError: (error: any) => {
       if (
         error.response &&
-        (error.response.status === 400 || error.response.status === 500)
+        (error.response.status === 401 || error.response.status === 403 || error.response.status === 400 || error.response.status === 500)
       ) {
         let message = "Failed to edit user";
         
@@ -160,7 +160,7 @@ const handleErrorFetchApi = {
     handleGetGroupListError: (error: any) => {
       if (
         error.response &&
-        (error.response.status === 404 || error.response.status === 500)
+        (error.response.status === 401 || error.response.status === 403 || error.response.status === 404 || error.response.status === 500)
       ) {
         let message = "Failed to fetch group list";
 

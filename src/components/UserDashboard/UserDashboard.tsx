@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import UserModal from "./UserModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowsRotate, faCirclePlus, faPencil, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { ClipLoader } from "react-spinners";
 
 
 type User = {
@@ -37,6 +38,12 @@ function UserDashboard() {
   const [typeModal, setTypeModal] = useState<"add" | "edit" | "delete">("add");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  
+  // ✅ Add loading states
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
     email: "",
     username: "",
@@ -77,15 +84,17 @@ function UserDashboard() {
 
   const fetchApi = async () => {
     try {
+      setIsLoading(true); // ✅ Start loading
       const response = await getAllUsers(currentPage, currentLimit);
 
-      console.log(response.data);
       if (response.status === 200) {
         setUserList(response.data.data);
         setTotalPages(response.data.pagination.totalPages);
       }
     } catch (error) {
       handleErrorFetchApi.handleGetAllUsersError(error);
+    } finally {
+      setIsLoading(false); // ✅ Stop loading
     }
   };
 
@@ -97,6 +106,7 @@ function UserDashboard() {
 
   const handleDelete = async (userId: number) => {
     try {
+      setIsDeleting(true); // ✅ Start delete loading
       const response = await deleteUser(userId);
       if (response.status === 200) {
         toast.success(response.data.message, {
@@ -108,6 +118,8 @@ function UserDashboard() {
       }
     } catch (error) {
       handleErrorFetchApi.handleDeleteUserError(error);
+    } finally {
+      setIsDeleting(false); // ✅ Stop delete loading
     }
   };
 
@@ -262,6 +274,7 @@ function UserDashboard() {
     }
 
     try {
+      setIsSubmitting(true); // ✅ Start submit loading
       const response = await addUser(formData);
       if (response.status === 201) {
         toast.success(response.data.message, {
@@ -273,6 +286,8 @@ function UserDashboard() {
       }
     } catch (error) {
       handleErrorFetchApi.handleAddUserError(error);
+    } finally {
+      setIsSubmitting(false); // ✅ Stop submit loading
     }
   };
 
@@ -296,6 +311,7 @@ function UserDashboard() {
     }
 
     try {
+      setIsSubmitting(true); // ✅ Start submit loading
       if (!selectedUser) return;
       const response = await editUser(selectedUser.id, formData);
       if (response.status === 200) {
@@ -308,6 +324,8 @@ function UserDashboard() {
       }
     } catch (error) {
       handleErrorFetchApi.handleEditUserError(error);
+    } finally {
+      setIsSubmitting(false); // ✅ Stop submit loading
     }
   };
 
@@ -328,12 +346,23 @@ function UserDashboard() {
               <button 
                 className="btn btn-success"
                 onClick={fetchApi}
+                disabled={isLoading}
               >
-                <FontAwesomeIcon icon={faArrowsRotate} /> Refresh
+                {isLoading ? (
+                  <>
+                    <ClipLoader size={16} color="#fff" />
+                    <span className="ms-2">Loading...</span>
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon={faArrowsRotate} /> Refresh
+                  </>
+                )}
               </button>
               <button 
                 className="btn btn-primary"
                 onClick={() => openModal("add")}
+                disabled={isLoading}
               >
                 <FontAwesomeIcon icon={faCirclePlus} /> Add New User
               </button>
@@ -342,177 +371,198 @@ function UserDashboard() {
         </div>
       </div>
 
-      {/* Table Section */}
-      <div className="user-list">
-        <div className="row">
-          <div className="col-12">
-            <div className="card border-0 shadow-sm">
-              <div className="card-header bg-white border-bottom">
-                <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center">
-                  <h5 className="mb-2 mb-sm-0">User List</h5>
-                  <small className="text-muted">
-                    Page {currentPage} of {totalPages}
-                  </small>
+      {/* ✅ Loading Overlay */}
+      {isLoading && (
+        <div className="d-flex justify-content-center align-items-center py-5">
+          <div className="text-center">
+            <ClipLoader 
+              color="#007bff" 
+              loading={isLoading} 
+              size={50} 
+              cssOverride={{
+                display: "block",
+                margin: "0 auto",
+                borderColor: "#007bff",
+              }}
+            />
+            <p className="mt-3 text-muted">Loading users...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Table Section - Only show when not loading */}
+      {!isLoading && (
+        <div className="user-list">
+          <div className="row">
+            <div className="col-12">
+              <div className="card border-0 shadow-sm">
+                <div className="card-header bg-white border-bottom">
+                  <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center">
+                    <h5 className="mb-2 mb-sm-0">User List</h5>
+                    <small className="text-muted">
+                      Page {currentPage} of {totalPages}
+                    </small>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="card-body p-0">
-                {/* Desktop Table */}
-                <div className="table-responsive d-none d-md-block">
-                  <table className="table table-hover mb-0">
-                    <thead className="table-light">
-                      <tr>
-                        <th scope="col" className="text-center">#</th>
-                        <th scope="col">ID</th>
-                        <th scope="col">Email</th>
-                        <th scope="col">Username</th>
-                        <th scope="col">Phone</th>
-                        <th scope="col">Address</th>
-                        <th scope="col">Group</th>
-                        <th scope="col" className="text-center">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="table-group-divider">
-                      {userList.length === 0 ? (
+                
+                <div className="card-body p-0">
+                  {/* Desktop Table */}
+                  <div className="table-responsive d-none d-md-block">
+                    <table className="table table-hover mb-0">
+                      <thead className="table-light">
                         <tr>
-                          <td colSpan={8} className="text-center py-4">
-                            <div className="text-muted">
-                              <i className="fas fa-users fa-2x mb-2"></i>
-                              <p>No users found</p>
-                            </div>
-                          </td>
+                          <th scope="col" className="text-center">#</th>
+                          <th scope="col">ID</th>
+                          <th scope="col">Email</th>
+                          <th scope="col">Username</th>
+                          <th scope="col">Phone</th>
+                          <th scope="col">Address</th>
+                          <th scope="col">Group</th>
+                          <th scope="col" className="text-center">Actions</th>
                         </tr>
-                      ) : (
-                        userList.map((user, index) => (
-                          <tr key={user.id}>
-                            <td className="text-center">
-                              {(currentPage - 1) * currentLimit + index + 1}
-                            </td>
-                            <td>{user.id}</td>
-                            <td>
-                              <div className="text-truncate" style={{ maxWidth: "150px" }}>
-                                {user.email}
-                              </div>
-                            </td>
-                            <td>{user.username}</td>
-                            <td>{user.phone}</td>
-                            <td>
-                              <div className="text-truncate" style={{ maxWidth: "120px" }}>
-                                {user.address}
-                              </div>
-                            </td>
-                            <td>
-                              <span className="badge bg-secondary">
-                                {user.group.description}
-                              </span>
-                            </td>
-                            <td>
-                              <div className="d-flex gap-1 justify-content-center">
-                                <button
-                                  className="btn btn-warning btn-sm"
-                                  onClick={() => openModal("edit", user)}
-                                  title="Edit User"
-                                >
-                                  <FontAwesomeIcon icon={faPencil} />
-                                </button>
-                                <button
-                                  className="btn btn-danger btn-sm"
-                                  onClick={() => openModal("delete", user)}
-                                  title="Delete User"
-                                >
-                                  <FontAwesomeIcon icon={faTrash} />
-                                </button>
+                      </thead>
+                      <tbody className="table-group-divider">
+                        {userList.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="text-center py-4">
+                              <div className="text-muted">
+                                <i className="fas fa-users fa-2x mb-2"></i>
+                                <p>No users found</p>
                               </div>
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Cards */}
-                <div className="d-block d-md-none">
-                  {userList.length === 0 ? (
-                    <div className="text-center py-5">
-                      <div className="text-muted">
-                        <i className="fas fa-users fa-3x mb-3"></i>
-                        <p>No users found</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-3">
-                      {userList.map((user, index) => (
-                        <div key={user.id} className="card mb-3 border">
-                          <div className="card-body">
-                            <div className="d-flex justify-content-between align-items-start mb-2">
-                              <div>
-                                <h6 className="card-title mb-1">
-                                  #{(currentPage - 1) * currentLimit + index + 1} - {user.username}
-                                </h6>
-                                <span className="badge bg-secondary mb-2">
+                        ) : (
+                          userList.map((user, index) => (
+                            <tr key={user.id}>
+                              <td className="text-center">
+                                {(currentPage - 1) * currentLimit + index + 1}
+                              </td>
+                              <td>{user.id}</td>
+                              <td>
+                                <div className="text-truncate" style={{ maxWidth: "150px" }}>
+                                  {user.email}
+                                </div>
+                              </td>
+                              <td>{user.username}</td>
+                              <td>{user.phone}</td>
+                              <td>
+                                <div className="text-truncate" style={{ maxWidth: "120px" }}>
+                                  {user.address}
+                                </div>
+                              </td>
+                              <td>
+                                <span className="badge bg-secondary">
                                   {user.group.description}
                                 </span>
+                              </td>
+                              <td>
+                                <div className="d-flex gap-1 justify-content-center">
+                                  <button
+                                    className="btn btn-warning btn-sm"
+                                    onClick={() => openModal("edit", user)}
+                                    title="Edit User"
+                                  >
+                                    <FontAwesomeIcon icon={faPencil} />
+                                  </button>
+                                  <button
+                                    className="btn btn-danger btn-sm"
+                                    onClick={() => openModal("delete", user)}
+                                    title="Delete User"
+                                  >
+                                    <FontAwesomeIcon icon={faTrash} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className="d-block d-md-none">
+                    {userList.length === 0 ? (
+                      <div className="text-center py-5">
+                        <div className="text-muted">
+                          <i className="fas fa-users fa-3x mb-3"></i>
+                          <p>No users found</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3">
+                        {userList.map((user, index) => (
+                          <div key={user.id} className="card mb-3 border">
+                            <div className="card-body">
+                              <div className="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                  <h6 className="card-title mb-1">
+                                    #{(currentPage - 1) * currentLimit + index + 1} - {user.username}
+                                  </h6>
+                                  <span className="badge bg-secondary mb-2">
+                                    {user.group.description}
+                                  </span>
+                                </div>
+                                <div className="dropdown">
+                                  <button
+                                    className="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    type="button"
+                                    data-bs-toggle="dropdown"
+                                  >
+                                    Actions
+                                  </button>
+                                  <ul className="dropdown-menu">
+                                    <li>
+                                      <button
+                                        className="dropdown-item"
+                                        onClick={() => openModal("edit", user)}
+                                      >
+                                        Edit
+                                      </button>
+                                    </li>
+                                    <li>
+                                      <button
+                                        className="dropdown-item text-danger"
+                                        onClick={() => openModal("delete", user)}
+                                      >
+                                        Delete
+                                      </button>
+                                    </li>
+                                  </ul>
+                                </div>
                               </div>
-                              <div className="dropdown">
-                                <button
-                                  className="btn btn-outline-secondary btn-sm dropdown-toggle"
-                                  type="button"
-                                  data-bs-toggle="dropdown"
-                                >
-                                  Actions
-                                </button>
-                                <ul className="dropdown-menu">
-                                  <li>
-                                    <button
-                                      className="dropdown-item"
-                                      onClick={() => openModal("edit", user)}
-                                    >
-                                      Edit
-                                    </button>
-                                  </li>
-                                  <li>
-                                    <button
-                                      className="dropdown-item text-danger"
-                                      onClick={() => openModal("delete", user)}
-                                    >
-                                      Delete
-                                    </button>
-                                  </li>
-                                </ul>
-                              </div>
-                            </div>
-                            
-                            <div className="row g-2 small text-muted">
-                              <div className="col-12">
-                                <strong>ID:</strong> {user.id}
-                              </div>
-                              <div className="col-12">
-                                <strong>Email:</strong> 
-                                <div className="text-break">{user.email}</div>
-                              </div>
-                              <div className="col-12">
-                                <strong>Phone:</strong> {user.phone}
-                              </div>
-                              <div className="col-12">
-                                <strong>Address:</strong> 
-                                <div className="text-break">{user.address}</div>
+                              
+                              <div className="row g-2 small text-muted">
+                                <div className="col-12">
+                                  <strong>ID:</strong> {user.id}
+                                </div>
+                                <div className="col-12">
+                                  <strong>Email:</strong> 
+                                  <div className="text-break">{user.email}</div>
+                                </div>
+                                <div className="col-12">
+                                  <strong>Phone:</strong> {user.phone}
+                                </div>
+                                <div className="col-12">
+                                  <strong>Address:</strong> 
+                                  <div className="text-break">{user.address}</div>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Pagination */}
-      {totalPages > 0 && (
+      {/* Pagination - Only show when not loading and has data */}
+      {!isLoading && totalPages > 0 && (
         <div className="user-footer d-flex justify-content-center py-4">
           <ReactPaginate
             previousLabel={
@@ -567,6 +617,9 @@ function UserDashboard() {
         onSubmitEdit={handleSubmitEdit}
         onConfirmDelete={confirmDelete}
         onFieldChange={handleFieldChange}
+        // ✅ Pass loading states to modal
+        isSubmitting={isSubmitting}
+        isDeleting={isDeleting}
       />
     </div>
   );
