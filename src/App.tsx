@@ -15,8 +15,9 @@ function App() {
 
   useEffect(() => {
     const storedAuthData = sessionStorage.getItem("authData");
-    
-    if (storedAuthData) {
+    const storedJwt = localStorage.getItem("jwt");
+
+    if (storedAuthData && storedJwt) {
       try {
         const parsedData = JSON.parse(storedAuthData);
         
@@ -30,16 +31,20 @@ function App() {
           dispatch(setUser(userData));
         } else {
           sessionStorage.removeItem("authData");
+          localStorage.removeItem("jwt");
           dispatch(clearUser());
           navigate("/login");
         }
       } catch (err) {
         console.error("❌ Error parsing auth data:", err);
         sessionStorage.removeItem("authData");
+        localStorage.removeItem("jwt");
         dispatch(clearUser());
         navigate("/login");
       }
     } else {
+      sessionStorage.removeItem("authData");
+      localStorage.removeItem("jwt");
       dispatch(clearUser());
       navigate("/login");
     }

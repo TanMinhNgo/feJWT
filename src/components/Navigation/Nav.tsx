@@ -1,11 +1,18 @@
 import "./Nav.scss";
 import { NavLink, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faSignOutAlt, faUserCircle, faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import {
+  faUser,
+  faSignOutAlt,
+  faUserCircle,
+  faChevronDown,
+} from "@fortawesome/free-solid-svg-icons";
 import { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { clearUser } from "../../stores/userSlice";
 import { toast } from "react-toastify";
+import handleErrorFetchApi from "../UI/HandleErrorFetchApi";
+import { logoutUser } from "../../services/userService";
 
 interface NavProps {
   readonly isLoggedIn: boolean;
@@ -21,30 +28,42 @@ function Nav({ isLoggedIn }: NavProps) {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("authData");
+  const handleLogout = async () => {
+    try {
+      const response = await logoutUser();
 
-    dispatch(clearUser());
-    
-    setShowDropdown(false);
-    
-    toast.success("Logged out successfully!", {
-      position: 'top-right',
-      autoClose: 3000
-    });
-    
-    navigate("/login");
+      if (response.status === 200) {
+        sessionStorage.removeItem("authData");
+        localStorage.removeItem("jwt");
+
+        dispatch(clearUser());
+
+        setShowDropdown(false);
+
+        toast.success(response.data.message || "Logged out successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+
+        navigate("/login");
+      }
+    } catch (error) {
+      handleErrorFetchApi.handleLogoutError(error);
+    }
   };
 
   return (
@@ -58,6 +77,16 @@ function Nav({ isLoggedIn }: NavProps) {
                 to={isLoggedIn ? "/user-dashboard" : "/"}
               >
                 Home
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink className="nav-link fs-5" to="/roles">
+                Roles
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink className="nav-link fs-5" to="/project">
+                Projects
               </NavLink>
             </li>
             <li className="nav-item">
@@ -79,59 +108,71 @@ function Nav({ isLoggedIn }: NavProps) {
           <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
             {isLoggedIn ? (
               <li className="nav-item dropdown position-relative">
-                <button 
+                <button
                   className="nav-link fs-5 btn btn-link text-decoration-none d-flex align-items-center user-dropdown-btn"
                   onClick={() => setShowDropdown(!showDropdown)}
-                  style={{ color: 'rgba(255,255,255,.75)' }}
+                  style={{ color: "rgba(255,255,255,.75)" }}
                 >
                   <FontAwesomeIcon icon={faUserCircle} className="me-2" />
-                  <FontAwesomeIcon 
-                    icon={faChevronDown} 
-                    className={`dropdown-arrow ${showDropdown ? 'rotated' : ''}`} 
+                  <FontAwesomeIcon
+                    icon={faChevronDown}
+                    className={`dropdown-arrow ${
+                      showDropdown ? "rotated" : ""
+                    }`}
                   />
                 </button>
-                
+
                 {/* Dropdown Menu */}
                 {showDropdown && (
-                  <div 
+                  <div
                     className="dropdown-menu dropdown-menu-end show position-absolute bg-white border rounded shadow-lg"
                     ref={dropdownRef}
-                    style={{ 
-                      top: '100%', 
-                      right: 0, 
-                      marginTop: '0.5rem',
-                      minWidth: '250px',
-                      zIndex: 1000
+                    style={{
+                      top: "100%",
+                      right: 0,
+                      marginTop: "0.5rem",
+                      minWidth: "250px",
+                      zIndex: 1000,
                     }}
                   >
                     {/* Header */}
                     <div className="px-3 py-2 bg-light border-bottom">
                       <div className="d-flex align-items-center">
-                        <FontAwesomeIcon icon={faUserCircle} className="me-2 fs-5 text-primary" />
+                        <FontAwesomeIcon
+                          icon={faUserCircle}
+                          className="me-2 fs-5 text-primary"
+                        />
                         <div>
-                          <div className="fw-bold text-dark mb-0">{user.user?.username || 'User'}</div>
-                          <small className="text-muted">{user.user?.email}</small>
+                          <div className="fw-bold text-dark mb-0">
+                            {user.user?.username || "User"}
+                          </div>
+                          <small className="text-muted">
+                            {user.user?.email}
+                          </small>
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Profile Item */}
-                    <button 
+                    <button
                       className="dropdown-item d-flex align-items-center py-2 px-3"
                       onClick={() => {
                         setShowDropdown(false);
                         navigate("/profile");
                       }}
                     >
-                      <FontAwesomeIcon icon={faUser} className="me-3 text-secondary" />
+                      <FontAwesomeIcon
+                        icon={faUser}
+                        className="me-3 text-secondary"
+                      />
                       <span>Profile Settings</span>
                     </button>
-                    
+
                     {/* Divider */}
                     <div className="dropdown-divider"></div>
-                    
+
                     {/* Logout Item */}
-                    <button 
+                    <button
                       className="dropdown-item d-flex align-items-center py-2 px-3 text-danger"
                       onClick={handleLogout}
                     >

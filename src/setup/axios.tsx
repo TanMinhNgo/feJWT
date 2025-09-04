@@ -14,6 +14,8 @@ const instance = axios.create({
 
 instance.defaults.withCredentials = true;
 
+instance.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem("jwt")}`;
+
 // Request interceptor
 instance.interceptors.request.use(
   (config) => {

@@ -26,4 +26,9 @@ const getGroupList = async () => {
   return response;
 };
 
-export { getAllUsers, deleteUser, addUser, editUser, getGroupList };
+const logoutUser = async () => {
+  const response = await axios.post("/v1/logout");
+  return response;
+};
+
+export { getAllUsers, deleteUser, addUser, editUser, getGroupList, logoutUser };

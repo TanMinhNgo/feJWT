@@ -6,6 +6,7 @@ import About from "../About";
 import Contact from "../Contact";
 import News from "../News";
 import Home from "../Home";
+import RoleDashboard from "../components/RoleDashboard/RoleDashboard";
 
 const AppRoutes = () => {
   return (
@@ -27,6 +28,7 @@ const AppRoutes = () => {
 
       <Route path="/user-dashboard" element={<UserDashboard />} />
       <Route path="/project" element={<h1>Project Page</h1>} />
+      <Route path="/roles" element={<RoleDashboard />} />
     </Routes>
   );
 };

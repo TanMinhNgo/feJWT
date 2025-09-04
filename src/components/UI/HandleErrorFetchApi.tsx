@@ -182,6 +182,30 @@ const handleErrorFetchApi = {
       }
       console.error("Failed to fetch group list:", error);
     },
+
+    handleLogoutError: (error: any) => {
+      if (
+        error.response &&
+        (error.response.status === 400 || error.response.status === 500)
+      ) {
+        let message = "Logout failed";
+        if (error.response.data?.message) {
+          message = error.response.data.message;
+        } else if (typeof error.response.data === "string") {
+          message = error.response.data;
+        }
+        toast.error(message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      } else {
+        toast.error("Logout failed", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+      console.error("Logout failed:", error);
+    }
 }
 
 export default handleErrorFetchApi;

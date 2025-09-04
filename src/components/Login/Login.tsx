@@ -123,6 +123,7 @@ function Login() {
           isLoggedIn: true,
         };
 
+        localStorage.setItem("jwt", response.data.data.accessToken);
         sessionStorage.setItem("authData", JSON.stringify(data));
         dispatch(setUser(userData));
         navigate("/user-dashboard");
