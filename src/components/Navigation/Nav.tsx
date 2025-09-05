@@ -80,13 +80,13 @@ function Nav({ isLoggedIn }: NavProps) {
               </NavLink>
             </li>
             <li className="nav-item">
-              <NavLink className="nav-link fs-5" to="/roles">
+              <NavLink className="nav-link fs-5" to="/role-dashboard">
                 Roles
               </NavLink>
             </li>
             <li className="nav-item">
-              <NavLink className="nav-link fs-5" to="/project">
-                Projects
+              <NavLink className="nav-link fs-5" to="/group-roles">
+                Group-Roles
               </NavLink>
             </li>
             <li className="nav-item">
